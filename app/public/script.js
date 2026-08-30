@@ -10,16 +10,19 @@ function resize() {
 resize();
 window.addEventListener("resize", resize);
 
-function draw() {
+const COUNT = 1000;
+const pts = [];
+for (let i = 0; i < COUNT; i++) {
+  pts.push({
+    x: Math.floor(Math.random() * window.innerWidth),
+    y: Math.floor(Math.random() * window.innerHeight),
+  });
+}
+
+function draw(x, y) {
   ctx.fillStyle = "rgb(255, 255, 255)";
   ctx.beginPath();
-  ctx.arc(
-    Math.floor(Math.random() * window.innerWidth),
-    Math.floor(Math.random() * window.innerHeight),
-    3,
-    0,
-    Math.PI * 2,
-  );
+  ctx.arc(x, y, 3, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -29,12 +32,18 @@ let last = performance.now();
 function loop(now) {
   frames++;
   if (now - last > 500) {
-    hud.textContent = `particles: Soon™ | canvas: ${canvas.width}×${canvas.height} | frames: ${frames}`;
+    hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}×${canvas.height} | frames: ${frames}`;
     frames = 0;
     last = now;
   }
+
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+  for (const p of pts) {
+    draw(p.x, p.y);
+  }
+
   requestAnimationFrame(loop);
 }
 
 requestAnimationFrame(loop);
-draw();

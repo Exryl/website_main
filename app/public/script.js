@@ -1,5 +1,6 @@
 import { createNoise2D } from "/vendor/simplex-noise/simplex-noise.js";
 
+const noise2D = createNoise2D();
 console.log(noise2D(0, 0));
 
 const canvas = document.getElementById("canvas");

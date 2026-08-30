@@ -30,9 +30,9 @@ let frames = 0;
 let last = performance.now();
 
 function loop(now) {
-  frames++;
   if (now - last > 500) {
-    hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}×${canvas.height} | frames: ${frames}`;
+    const fps = Math.round((frames * 1000) / (now - last));
+    hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}×${canvas.height} | fps: ${fps}`;
     frames = 0;
     last = now;
   }
@@ -43,6 +43,7 @@ function loop(now) {
     draw(p.x, p.y);
   }
 
+  frames++;
   requestAnimationFrame(loop);
 }
 

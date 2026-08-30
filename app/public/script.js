@@ -24,7 +24,7 @@ for (let i = 0; i < COUNT; i++) {
     x: Math.floor(Math.random() * window.innerWidth),
     y: Math.floor(Math.random() * window.innerHeight),
     angle: Math.random() * Math.PI * 2,
-    noiseOffset: Math.random() * 1000, // unique offset so each dot samples a different part of the noise field
+    noiseOffset: Math.random() * 1000,
   });
 }
 

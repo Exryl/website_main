@@ -1,3 +1,7 @@
+import { createNoise2D } from "/vendor/simplex-noise/simplex-noise.js";
+
+console.log(noise2D(0, 0));
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const hud = document.getElementById("hud");

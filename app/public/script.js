@@ -1,8 +1,6 @@
 import { createNoise2D } from "/vendor/simplex-noise/simplex-noise.js";
 
 const noise2D = createNoise2D();
-console.log(noise2D(1.5, 3.2));
-
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const hud = document.getElementById("hud");
@@ -25,6 +23,8 @@ for (let i = 0; i < COUNT; i++) {
   pts.push({
     x: Math.floor(Math.random() * window.innerWidth),
     y: Math.floor(Math.random() * window.innerHeight),
+    angle: Math.random() * Math.PI * 2,
+    noiseOffset: Math.random() * 1000,
   });
 }
 
@@ -35,7 +35,6 @@ function draw(x, y) {
   ctx.fill();
 }
 
-const angle = inRadians(90);
 const speed = 0.9;
 let frames = 0;
 let last = performance.now();
@@ -50,12 +49,13 @@ function loop(now) {
 
   ctx.clearRect(0, 0, innerWidth, innerHeight);
 
-  const dx = Math.cos(angle) * speed;
-  const dy = Math.sin(angle) * speed;
-
   for (const p of pts) {
-    p.x += dx;
-    p.y += dy;
+    const n = noise2D(p.noiseOffset, now * 0.0002);
+    p.angle += n * 0.05;
+
+    p.x += Math.cos(p.angle) * speed;
+    p.y += Math.sin(p.angle) * speed;
+
     draw(p.x, p.y);
   }
 

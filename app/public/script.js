@@ -1,12 +1,18 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+resize();
+window.addEventListener("resize", resize);
+
 function draw() {
   ctx.fillStyle = "rgb(255 255 255)";
   ctx.beginPath();
-  ctx.moveTo(75, 50);
-  ctx.lineTo(100, 75);
-  ctx.lineTo(100, 25);
+  ctx.arc(75, 75, 3, 0, Math.PI * 2);
   ctx.fill();
 }
 

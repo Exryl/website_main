@@ -2,8 +2,12 @@ body {
   background-color: black;
   color: white;
   text-align: center;
+  margin: 0px;
 }
 
 canvas {
-  border: 1px solid white;
+  position: fixed;
+  inset: 0;
+  display: block;
+  z-index: 0;
 }

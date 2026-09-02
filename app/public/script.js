@@ -19,19 +19,30 @@ window.addEventListener("resize", resize);
 
 const COUNT = 1000;
 const pts = [];
+
 for (let i = 0; i < COUNT; i++) {
   pts.push({
     x: Math.floor(Math.random() * window.innerWidth),
     y: Math.floor(Math.random() * window.innerHeight),
+    size: 3,
     angle: Math.random() * Math.PI * 2,
     noiseOffset: Math.random() * 1000,
   });
 }
 
-function draw(x, y) {
-  ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+function draw(x, y, size, glow) {
+  if (glow) {
+    const gradient = ctx.createRadialGradient(110, 90, 30, 100, 100, 70);
+
+    ctx.fillStyle(gradient);
+
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+  } else {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+  }
   ctx.beginPath();
-  ctx.arc(x, y, 3, 0, Math.PI * 2);
+  ctx.arc(x, y, size, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -52,10 +63,12 @@ function loop(now) {
   for (const p of pts) {
     const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
     p.angle += n * 0.05; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
+    
     p.x += Math.cos(p.angle) * speed;
     p.y += Math.sin(p.angle) * speed;
 
-    draw(p.x, p.y);
+    draw(p.x, p.y, p.size, false);
+    draw(p.x, p.y, p.size * 2.5, true);
   }
 
   frames++;

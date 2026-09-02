@@ -13,8 +13,15 @@ function inRadians(degree) {
 }
 
 function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio;
+
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+
+  canvas.style.width = window.innerWidth;
+  canvas.style.height = window.innerHeight;
+
+  ctx.scale(dpr, dpr)
 }
 
 resize();
@@ -60,18 +67,17 @@ let last = performance.now();
 let lastFrameTime = last;
 
 function loop(now) {
-  const deltaTime = now - lastFrameTime;
-  lastFrameTime = now;
-
   if (now - last > 500) {
     const fps = Math.round((frames * 1000) / (now - last));
     hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}x${canvas.height} | fps: ${fps}`;
     frames = 0;
     last = now;
   }
-
+  
   ctx.clearRect(0, 0, innerWidth, innerHeight);
-
+  
+  const deltaTime = now - lastFrameTime;
+  
   for (const p of pts) {
     if (p.angle != 0) {
       const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
@@ -102,6 +108,7 @@ function loop(now) {
   }
   
   frames++;
+  lastFrameTime = now;
   requestAnimationFrame(loop);
 }
 

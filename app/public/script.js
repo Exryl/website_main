@@ -30,13 +30,14 @@ window.addEventListener("resize", resize);
 
 const COUNT = 1000;
 const pts = [];
+const size = 3;
 
 function generate(randomAng) {
   for (let i = 0; i < COUNT; i++) {
     pts.push({
       x: Math.floor(Math.random() * window.innerWidth),
       y: Math.floor(Math.random() * window.innerHeight),
-      size: 3,
+      size: size,
       angle: randomAng ? Math.random() * Math.PI * 2 : 0,
       noiseOffset: Math.random() * 1000,
     });
@@ -45,16 +46,26 @@ function generate(randomAng) {
 
 generate(false);
 
-const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 0);
+const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2.5);
 
 gradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
 gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
-function draw(x, y, size) {
-  ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+function draw(x, y, size, alpha) {
+  ctx.fillStyle = `rgba(255, 255, 255, ${alpha / 100})`;
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
   ctx.fill();
+}
+
+function drawGlow(x, y, size) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 const speed = 0.06; // pixels moved per frame in the current direction
@@ -100,14 +111,9 @@ function loop(now) {
       }
     }
 
-    draw(p.x, p.y, p.size);
+    draw(p.x, p.y, p.size, 50);
 
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.fillStyle = gradient;
-    draw(0, 0, p.size * 2.5);
-    ctx.fill();
-    ctx.restore();
+    draw(p.x, p.y, p.size * 2.5, 30);
   }
 
   frames++;

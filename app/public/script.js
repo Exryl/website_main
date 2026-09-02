@@ -1,6 +1,9 @@
-//import { createNoise2D } from "/vendor/simplex-noise/simplex-noise.js";
+let noise2D = null;
 
-//const noise2D = createNoise2D();
+import("/vendor/simplex-noise/simplex-noise.js").then(({ createNoise2D }) => {
+  noise2D = createNoise2D();
+});
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const hud = document.getElementById("hud");
@@ -51,11 +54,15 @@ function draw(x, y, size, glow) {
 }
 
 const speed = 0.06; // pixels moved per frame in the current direction
-const angle = 90;
+const angle = 270;
 let frames = 0;
 let last = performance.now();
+let lastFrameTime = last;
 
 function loop(now) {
+  const deltaTime = now - lastFrameTime;
+  lastFrameTime = now;
+
   if (now - last > 500) {
     const fps = Math.round((frames * 1000) / (now - last));
     hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}x${canvas.height} | fps: ${fps}`;
@@ -69,18 +76,31 @@ function loop(now) {
     if (p.angle != 0) {
       const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
       p.angle += n * 0.05; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
-
-      p.x += Math.cos(p.angle) * speed;
-      p.y += Math.sin(p.angle) * speed;
+      
+      p.x += Math.cos(p.angle) * speed * deltaTime;
+      p.y += Math.sin(p.angle) * speed * deltaTime;
     } else {
-      p.x += Math.cos(inRadians(angle)) * speed;
-      p.y += Math.sin(inRadians(angle)) * speed;
+      p.x += Math.cos(inRadians(angle)) * speed * deltaTime;
+      p.y += Math.sin(inRadians(angle)) * speed * deltaTime;
+      
+      if (p.x > innerWidth) {
+        p.x = 0;
+      }
+      if (p.y > innerHeight) {
+        p.y = 0;
+      }
+      if (p.x < 0) {
+        p.x = innerWidth;
+      }
+      if (p.y < 0) {
+        p.y = innerHeight;
+      }
     }
-
+    
     draw(p.x, p.y, p.size, false);
-    draw(p.x, p.y, p.size * 2.5, true);
+    draw(p.x, p.y, p.size * 2.5, false);
   }
-
+  
   frames++;
   requestAnimationFrame(loop);
 }

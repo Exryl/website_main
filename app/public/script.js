@@ -18,10 +18,11 @@ function resize() {
   canvas.width = window.innerWidth * dpr;
   canvas.height = window.innerHeight * dpr;
 
-  canvas.style.width = window.innerWidth;
-  canvas.style.height = window.innerHeight;
+  canvas.style.width = `${window.innerWidth}px`;
+  canvas.style.height = `${window.innerHeight}px`;
 
-  ctx.scale(dpr, dpr)
+  ctx.resetTransform();
+  ctx.scale(dpr, dpr);
 }
 
 resize();
@@ -44,17 +45,13 @@ function generate(randomAng) {
 
 generate(false);
 
-function draw(x, y, size, glow) {
-  if (glow) {
-    const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 0);
 
-    ctx.fillStyle = gradient;
+gradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
+gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
-    gradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
-    gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
-  } else {
-    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-  }
+function draw(x, y, size) {
+  ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
   ctx.fill();
@@ -73,22 +70,22 @@ function loop(now) {
     frames = 0;
     last = now;
   }
-  
+
   ctx.clearRect(0, 0, innerWidth, innerHeight);
-  
+
   const deltaTime = now - lastFrameTime;
-  
+
   for (const p of pts) {
     if (p.angle != 0) {
       const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
       p.angle += n * 0.05; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
-      
+
       p.x += Math.cos(p.angle) * speed * deltaTime;
       p.y += Math.sin(p.angle) * speed * deltaTime;
     } else {
       p.x += Math.cos(inRadians(angle)) * speed * deltaTime;
       p.y += Math.sin(inRadians(angle)) * speed * deltaTime;
-      
+
       if (p.x > innerWidth) {
         p.x = 0;
       }
@@ -102,11 +99,17 @@ function loop(now) {
         p.y = innerHeight;
       }
     }
-    
-    draw(p.x, p.y, p.size, false);
-    draw(p.x, p.y, p.size * 2.5, false);
+
+    draw(p.x, p.y, p.size);
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.fillStyle = gradient;
+    draw(0, 0, p.size * 2.5);
+    ctx.fill();
+    ctx.restore();
   }
-  
+
   frames++;
   lastFrameTime = now;
   requestAnimationFrame(loop);

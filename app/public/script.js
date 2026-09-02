@@ -1,16 +1,14 @@
-let noise2D = null;
+// Config
+const COUNT = 1000;
+const DOT_SIZE = 3;
+const SPEED = 0.06; // pixels moved per frame in the current direction
+const DRIFT_ANGLE_DEG = 270;
+const RANDOM_ANGLE = false;
 
-import("/vendor/simplex-noise/simplex-noise.js").then(({ createNoise2D }) => {
-  noise2D = createNoise2D();
-});
-
+// Canvas setup
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const hud = document.getElementById("hud");
-
-function inRadians(degree) {
-  return degree * (Math.PI / 180);
-}
 
 function resize() {
   const dpr = window.devicePixelRatio;
@@ -25,32 +23,58 @@ function resize() {
   ctx.scale(dpr, dpr);
 }
 
-resize();
-window.addEventListener("resize", resize);
+// Noise
+let noise2D = null;
 
-const COUNT = 1000;
+function loadNoise() {
+  import("/vendor/simplex-noise/simplex-noise.js").then(({ createNoise2D }) => {
+    noise2D = createNoise2D();
+  });
+}
+
+// Particles
 const pts = [];
-const size = 3;
 
-function generate(randomAng) {
+function inRadians(degree) {
+  return degree * (Math.PI / 180);
+}
+
+function generateParticles() {
   for (let i = 0; i < COUNT; i++) {
     pts.push({
       x: Math.floor(Math.random() * window.innerWidth),
       y: Math.floor(Math.random() * window.innerHeight),
-      size: size,
+      size: DOT_SIZE,
       alpha: 50,
-      angle: randomAng ? Math.random() * Math.PI * 2 : 0,
+      angle: RANDOM_ANGLE ? Math.random() * Math.PI * 2 : 0,
       noiseOffset: Math.random() * 1000,
     });
   }
 }
 
-generate(false);
+function updateParticle(p, now, deltaTime) {
+  if (p.angle !== 0) {
+    const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
+    p.angle += n * 0.05; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
 
-const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2.5);
+    p.x += Math.cos(p.angle) * SPEED * deltaTime;
+    p.y += Math.sin(p.angle) * SPEED * deltaTime;
+    return;
+  }
 
-gradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
-gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+  p.x += Math.cos(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
+  p.y += Math.sin(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
+
+  if (p.x > window.innerWidth) p.x = 0;
+  if (p.y > window.innerHeight) p.y = 0;
+  if (p.x < 0) p.x = window.innerWidth;
+  if (p.y < 0) p.y = window.innerHeight;
+}
+
+// Drawing
+const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, DOT_SIZE * 2.5);
+glowGradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
+glowGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
 function draw(x, y, size, alpha) {
   ctx.fillStyle = `rgba(255, 255, 255, ${alpha / 100})`;
@@ -62,47 +86,36 @@ function draw(x, y, size, alpha) {
 function drawGlow(x, y, size) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.fillStyle = gradient;
+  ctx.fillStyle = glowGradient;
   ctx.beginPath();
   ctx.arc(0, 0, size * 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
 
-const speed = 0.06; // pixels moved per frame in the current direction
-const angle = 270;
+// Animation loop
 let frames = 0;
-let last = performance.now();
-let lastFrameTime = last;
+let fpsWindowStart = performance.now();
+let lastFrameTime = fpsWindowStart;
+
+function updateHud(now) {
+  if (now - fpsWindowStart <= 500) return;
+
+  const fps = Math.round((frames * 1000) / (now - fpsWindowStart));
+  hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}x${canvas.height} | fps: ${fps}`;
+  frames = 0;
+  fpsWindowStart = now;
+}
 
 function loop(now) {
-  if (now - last > 500) {
-    const fps = Math.round((frames * 1000) / (now - last));
-    hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}x${canvas.height} | fps: ${fps}`;
-    frames = 0;
-    last = now;
-  }
+  updateHud(now);
 
-  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
   const deltaTime = now - lastFrameTime;
 
   for (const p of pts) {
-    if (p.angle != 0) {
-      const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
-      p.angle += n * 0.05; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
-
-      p.x += Math.cos(p.angle) * speed * deltaTime;
-      p.y += Math.sin(p.angle) * speed * deltaTime;
-    } else {
-      p.x += Math.cos(inRadians(angle)) * speed * deltaTime;
-      p.y += Math.sin(inRadians(angle)) * speed * deltaTime;
-
-      if (p.x > innerWidth) {p.x = 0;}
-      if (p.y > innerHeight) {p.y = 0;}
-      if (p.x < 0) {p.x = innerWidth;}
-      if (p.y < 0) {p.y = innerHeight;}
-    }
+    updateParticle(p, now, deltaTime);
 
     draw(p.x, p.y, p.size, p.alpha);
     draw(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
@@ -113,4 +126,9 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
+// Init
+loadNoise();
+resize();
+generateParticles();
+window.addEventListener("resize", resize);
 requestAnimationFrame(loop);

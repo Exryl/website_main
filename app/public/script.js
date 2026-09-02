@@ -38,6 +38,7 @@ function generate(randomAng) {
       x: Math.floor(Math.random() * window.innerWidth),
       y: Math.floor(Math.random() * window.innerHeight),
       size: size,
+      alpha: 50,
       angle: randomAng ? Math.random() * Math.PI * 2 : 0,
       noiseOffset: Math.random() * 1000,
     });
@@ -97,23 +98,14 @@ function loop(now) {
       p.x += Math.cos(inRadians(angle)) * speed * deltaTime;
       p.y += Math.sin(inRadians(angle)) * speed * deltaTime;
 
-      if (p.x > innerWidth) {
-        p.x = 0;
-      }
-      if (p.y > innerHeight) {
-        p.y = 0;
-      }
-      if (p.x < 0) {
-        p.x = innerWidth;
-      }
-      if (p.y < 0) {
-        p.y = innerHeight;
-      }
+      if (p.x > innerWidth) {p.x = 0;}
+      if (p.y > innerHeight) {p.y = 0;}
+      if (p.x < 0) {p.x = innerWidth;}
+      if (p.y < 0) {p.y = innerHeight;}
     }
 
-    draw(p.x, p.y, p.size, 50);
-
-    draw(p.x, p.y, p.size * 2.5, 30);
+    draw(p.x, p.y, p.size, p.alpha);
+    draw(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
   }
 
   frames++;

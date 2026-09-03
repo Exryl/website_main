@@ -1,7 +1,7 @@
 // Config
 const COUNT = 1000;
 const DOT_SIZE = 3;
-const SPEED = 0.06; // pixels moved per frame in the current direction
+const SPEED = 0.06; // pixels moved per ms in the current direction
 const DRIFT_ANGLE_DEG = 270;
 const RANDOM_ANGLE = false;
 
@@ -118,7 +118,7 @@ function loop(now) {
     updateParticle(p, now, deltaTime);
 
     draw(p.x, p.y, p.size, p.alpha);
-    draw(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
+    drawGlow(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
   }
 
   frames++;

@@ -3,7 +3,7 @@ const COUNT = 1000;
 const DOT_SIZE = 3;
 const SPEED = 0.06; // pixels moved per ms in the current direction
 const DRIFT_ANGLE_DEG = 270;
-const RANDOM_ANGLE = false;
+const RANDOM_ANGLE = true;
 
 // Canvas setup
 const canvas = document.getElementById("canvas");

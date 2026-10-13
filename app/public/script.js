@@ -3,6 +3,7 @@ const COUNT = 1000;
 const DOT_SIZE = 3;
 const SPEED = 0.06; // pixels moved per ms in the current direction
 const DRIFT_ANGLE_DEG = 270;
+const REFERENCE_FRAME_MS = 1000 / 60; // This adjust for different turning rates at different fps-es
 const RANDOM_ANGLE = true;
 
 // Canvas setup
@@ -54,7 +55,7 @@ function generateParticles() {
 function updateParticle(p, now, deltaTime) {
   if (p.angle !== 0) {
     const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
-    p.angle += n * 0.05; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
+    p.angle += n * inRadians(3) * deltaTime *REFERENCE_FRAME_MS; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
 
     p.x += Math.cos(p.angle) * SPEED * deltaTime;
     p.y += Math.sin(p.angle) * SPEED * deltaTime;

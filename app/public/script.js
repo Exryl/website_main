@@ -26,10 +26,9 @@ function resize() {
 // Noise
 let noise2D = null;
 
-function loadNoise() {
-  import("/vendor/simplex-noise/simplex-noise.js").then(({ createNoise2D }) => {
-    noise2D = createNoise2D();
-  });
+async function loadNoise() {
+  const { createNoise2D } = await import("/vendor/simplex-noise/simplex-noise.js");
+  noise2D = createNoise2D();
 }
 
 // Particles
@@ -127,8 +126,12 @@ function loop(now) {
 }
 
 // Init
-loadNoise();
-resize();
-generateParticles();
-window.addEventListener("resize", resize);
-requestAnimationFrame(loop);
+async function init() {
+  await loadNoise();
+  resize();
+  generateParticles();
+  window.addEventListener("resize", resize);
+  requestAnimationFrame(loop);
+}
+
+init();

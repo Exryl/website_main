@@ -2,9 +2,13 @@
 const COUNT = 1000;
 const DOT_SIZE = 3;
 const SPEED = 0.06; // pixels moved per ms in the current direction
+
+let DIRECTION_MODE = "fixed"; // "fixed" | "random"
 const DRIFT_ANGLE_DEG = 270;
+
+const GLOW_MODE = "cached"; // "none" | "simple" |"gradient" | "cached"
+
 const REFERENCE_FRAME_MS = 1000 / 60; // This adjust for different turning rates at different fps-es
-const RANDOM_ANGLE = false;
 
 // Canvas setup
 const canvas = document.getElementById("canvas");
@@ -44,6 +48,7 @@ async function loadNoise() {
     noise2D = createNoise2D();
   } catch (error) {
     console.log(error);
+    DIRECTION_MODE = "fixed"
   }
 }
 
@@ -61,24 +66,23 @@ function generateParticles() {
       y: Math.floor(Math.random() * window.innerHeight),
       size: DOT_SIZE,
       alpha: 50,
-      angle: RANDOM_ANGLE ? Math.random() * Math.PI * 2 : 0,
+      angle: DIRECTION_MODE === "random" ? Math.random() * Math.PI * 2 : 0,
       noiseOffset: Math.random() * 1000,
     });
   }
 }
 
 function updateParticle(p, now, deltaTime) {
-  if (RANDOM_ANGLE) {
+  if (DIRECTION_MODE === "random") {
     const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
     p.angle += (n * inRadians(3) * deltaTime) / REFERENCE_FRAME_MS; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
 
     p.x += Math.cos(p.angle) * SPEED * deltaTime;
     p.y += Math.sin(p.angle) * SPEED * deltaTime;
-  } else{
+  } else {
     p.x += Math.cos(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
     p.y += Math.sin(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
   }
-
 
   if (p.x > window.innerWidth) p.x = 0;
   if (p.y > window.innerHeight) p.y = 0;
@@ -92,9 +96,12 @@ function rescaleParticlePosition(p) {
 }
 
 // Drawing
-const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, DOT_SIZE * 2.5);
-glowGradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
-glowGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+function createGlowGradient(context, cx, cy, radius) {
+  const glowGradient = context.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  glowGradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
+  glowGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+  return glowGradient;
+}
 
 function draw(x, y, size, alpha) {
   ctx.fillStyle = `rgba(255, 255, 255, ${alpha / 100})`;
@@ -106,11 +113,35 @@ function draw(x, y, size, alpha) {
 function drawGlow(x, y, size) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.fillStyle = glowGradient;
+  ctx.fillStyle = createGlowGradient(ctx, 0, 0, size * 2.5);
   ctx.beginPath();
   ctx.arc(0, 0, size * 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+}
+
+const glowCanvas = document.getElementById("glowCanvas");
+const glowCtx = glowCanvas.getContext("2d");
+
+function drawGlowCache() {
+  glowCanvas.width = DOT_SIZE * 5;
+  glowCanvas.height = DOT_SIZE * 5;
+
+  glowCtx.fillStyle = createGlowGradient(
+    glowCtx,
+    glowCanvas.width / 2,
+    glowCanvas.height / 2,
+    DOT_SIZE * 2.5,
+  );
+  glowCtx.beginPath();
+  glowCtx.arc(
+    glowCanvas.width / 2,
+    glowCanvas.height / 2,
+    DOT_SIZE * 2.5,
+    0,
+    Math.PI * 2,
+  );
+  glowCtx.fill();
 }
 
 // Animation loop
@@ -137,8 +168,30 @@ function loop(now) {
   for (const p of pts) {
     updateParticle(p, now, deltaTime);
 
-    draw(p.x, p.y, p.size, p.alpha);
-    draw(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
+    switch (GLOW_MODE) {
+      case "none":
+        draw(p.x, p.y, p.size, p.alpha);
+        break;
+
+      case "simple":
+        draw(p.x, p.y, p.size, p.alpha);
+        draw(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
+        break;
+
+      case "gradient":
+        draw(p.x, p.y, p.size, p.alpha);
+        drawGlow(p.x, p.y, p.size);
+        break;
+
+      case "cached":
+        draw(p.x, p.y, p.size, p.alpha);
+        ctx.drawImage(
+          glowCanvas,
+          p.x - glowCanvas.width / 2,
+          p.y - glowCanvas.height / 2,
+        );
+        break;
+    }
   }
 
   frames++;
@@ -151,6 +204,7 @@ async function init() {
   await loadNoise();
   resize();
   generateParticles();
+  drawGlowCache();
   window.addEventListener("resize", resize);
   requestAnimationFrame(loop);
 }

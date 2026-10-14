@@ -48,7 +48,7 @@ async function loadNoise() {
     noise2D = createNoise2D();
   } catch (error) {
     console.log(error);
-    DIRECTION_MODE = "fixed"
+    DIRECTION_MODE = "fixed";
   }
 }
 
@@ -163,7 +163,10 @@ function loop(now) {
 
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-  const deltaTime = now - lastFrameTime;
+  const deltaTime = Math.min(
+    Math.max(0, now - lastFrameTime),
+    REFERENCE_FRAME_MS * 2,
+  );
 
   for (const p of pts) {
     updateParticle(p, now, deltaTime);

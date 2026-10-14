@@ -3,7 +3,7 @@ const COUNT = 1000;
 const DOT_SIZE = 3;
 const SPEED = 0.06; // pixels moved per ms in the current direction
 
-let DIRECTION_MODE = "fixed"; // "fixed" | "random"
+let DIRECTION_MODE = "random"; // "fixed" | "random"
 const DRIFT_ANGLE_DEG = 270;
 
 const GLOW_MODE = "cached"; // "none" | "simple" |"gradient" | "cached"

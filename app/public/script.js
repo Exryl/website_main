@@ -11,6 +11,9 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const hud = document.getElementById("hud");
 
+let previousWidth = window.innerWidth;
+let previousHeight = window.innerHeight;
+
 function resize() {
   const dpr = window.devicePixelRatio;
 
@@ -22,14 +25,26 @@ function resize() {
 
   ctx.resetTransform();
   ctx.scale(dpr, dpr);
+
+  for (const p of pts) {
+    rescaleParticlePosition(p);
+  }
+
+  previousWidth = window.innerWidth;
+  previousHeight = window.innerHeight;
 }
 
 // Noise
 let noise2D = null;
 
 async function loadNoise() {
-  const { createNoise2D } = await import("/vendor/simplex-noise/simplex-noise.js");
-  noise2D = createNoise2D();
+  try {
+    const { createNoise2D } =
+      await import("/vendor/simplex-noise/simplex-noise.js");
+    noise2D = createNoise2D();
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 // Particles
@@ -55,20 +70,25 @@ function generateParticles() {
 function updateParticle(p, now, deltaTime) {
   if (RANDOM_ANGLE) {
     const n = noise2D(p.noiseOffset, now * 0.0002); // scale time down so consecutive frames sample nearby noise values and the dot moves smoother
-    p.angle += n * inRadians(3) * deltaTime / REFERENCE_FRAME_MS; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
+    p.angle += (n * inRadians(3) * deltaTime) / REFERENCE_FRAME_MS; // caps max turn-rate per frame so it turns smother (0.05 rad ≈ 3°)
 
     p.x += Math.cos(p.angle) * SPEED * deltaTime;
     p.y += Math.sin(p.angle) * SPEED * deltaTime;
-    return;
+  } else{
+    p.x += Math.cos(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
+    p.y += Math.sin(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
   }
 
-  p.x += Math.cos(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
-  p.y += Math.sin(inRadians(DRIFT_ANGLE_DEG)) * SPEED * deltaTime;
 
   if (p.x > window.innerWidth) p.x = 0;
   if (p.y > window.innerHeight) p.y = 0;
   if (p.x < 0) p.x = window.innerWidth;
   if (p.y < 0) p.y = window.innerHeight;
+}
+
+function rescaleParticlePosition(p) {
+  p.x = window.innerWidth * (p.x / previousWidth);
+  p.y = window.innerHeight * (p.y / previousHeight);
 }
 
 // Drawing
@@ -118,7 +138,7 @@ function loop(now) {
     updateParticle(p, now, deltaTime);
 
     draw(p.x, p.y, p.size, p.alpha);
-    drawGlow(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
+    draw(p.x, p.y, p.size * 2.5, p.alpha * 0.3);
   }
 
   frames++;

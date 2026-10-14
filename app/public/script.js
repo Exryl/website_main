@@ -145,28 +145,39 @@ function drawGlowCache() {
 }
 
 // Animation loop
-let frames = 0;
 let fpsWindowStart = performance.now();
 let lastFrameTime = fpsWindowStart;
+
+let frames = 0;
+let totalProcessingTime = 0;
 
 function updateHud(now) {
   if (now - fpsWindowStart <= 500) return;
 
   const fps = Math.round((frames * 1000) / (now - fpsWindowStart));
-  hud.textContent = `particles: ${COUNT} | canvas: ${canvas.width}x${canvas.height} | fps: ${fps}`;
+  const avgProcessingTime = totalProcessingTime / frames;
+
+  hud.textContent =
+    `particles: ${COUNT} | ` +
+    `glow: ${GLOW_MODE} | ` +
+    `canvas: ${canvas.width}x${canvas.height} | ` +
+    `fps: ${fps} | ` +
+    `avg processing: ${avgProcessingTime.toFixed(2)} ms/frame`;
+
   frames = 0;
+  totalProcessingTime = 0;
   fpsWindowStart = now;
 }
 
 function loop(now) {
-  updateHud(now);
-
-  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  const start = performance.now();
 
   const deltaTime = Math.min(
     Math.max(0, now - lastFrameTime),
     REFERENCE_FRAME_MS * 2,
   );
+
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
   for (const p of pts) {
     updateParticle(p, now, deltaTime);
@@ -197,7 +208,13 @@ function loop(now) {
     }
   }
 
+  const processingTime = performance.now() - start;
+
+  totalProcessingTime += processingTime;
   frames++;
+
+  updateHud(now)
+
   lastFrameTime = now;
   requestAnimationFrame(loop);
 }
